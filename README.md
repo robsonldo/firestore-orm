@@ -1,2 +1,2 @@
 # firestore-orm
-Simple Firestore ORM
+Simple Firestore ORM Android
