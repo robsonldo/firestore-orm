@@ -22,11 +22,7 @@ class DataParse private constructor() {
             ref.fieldId?.let { it.isAccessible = true; it.set(ref, ref.id) }
 
             return when {
-                document.data != null -> fromMap(
-                    document.data!!,
-                    null,
-                    ref
-                )
+                document.data != null -> fromMap(document.data!!, null, ref)
                 else -> ref
             }
         }
@@ -69,13 +65,7 @@ class DataParse private constructor() {
 
                                 for (mapArray in mapArrays) {
                                     val fireStoreORM: FireStoreORM<*> = typeClass.newInstance() as FireStoreORM<*>
-                                    objects.add(
-                                        fromMap(
-                                            mapArray,
-                                            null,
-                                            fireStoreORM
-                                        )
-                                    )
+                                    objects.add(fromMap(mapArray, null, fireStoreORM))
                                 }
                             }
 
@@ -104,19 +94,10 @@ class DataParse private constructor() {
                         for (entryHash in entry.value as HashMap<String, Any?>) {
                             if (typeClass != null && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
                                 var fireStoreORM: FireStoreORM<*> = typeClass.newInstance() as FireStoreORM<*>
-                                fireStoreORM =
-                                    fromMap(
-                                        entryHash.value as MutableMap<String, Any?>,
-                                        null,
-                                        fireStoreORM
-                                    )
+                                fireStoreORM = fromMap(entryHash.value as MutableMap<String, Any?>, null, fireStoreORM)
                                 hash[entryHash.key] = fireStoreORM
 
-                            } else hash[entryHash.key] =
-                                manageDefinedTypes(
-                                    typeClass,
-                                    entryHash.value
-                                )
+                            } else hash[entryHash.key] = manageDefinedTypes(typeClass, entryHash.value)
                         }
 
                         field.set(ref, hash)
@@ -130,21 +111,10 @@ class DataParse private constructor() {
                             }
 
                             val fireStoreORM: FireStoreORM<*> = field.type.newInstance() as FireStoreORM<*>
-                            field.set(ref,
-                                fromMap(
-                                    entry.value as MutableMap<String, Any?>,
-                                    typeClass,
-                                    fireStoreORM
-                                )
-                            )
+                            field.set(ref, fromMap(entry.value as MutableMap<String, Any?>, typeClass, fireStoreORM))
                         }
                     }
-                    else -> field.set(ref,
-                        manageDefinedTypes(
-                            field.type,
-                            entry.value
-                        )
-                    )
+                    else -> field.set(ref, manageDefinedTypes(field.type, entry.value))
                 }
             }
 
@@ -184,13 +154,7 @@ class DataParse private constructor() {
                             if (objects.isEmpty()) continue@loop
 
                             val objectsMap: MutableList<MutableMap<String, Any?>> = mutableListOf()
-                            for (obj in objects) {
-                                objectsMap.add(
-                                    toMap(
-                                        obj
-                                    )
-                                )
-                            }
+                            for (obj in objects) objectsMap.add(toMap(obj))
 
                             map[entry.key] = objectsMap
                         } else {
@@ -216,10 +180,7 @@ class DataParse private constructor() {
                                 if (entryHash.value == null) {
                                     hash[entryHash.key] = null
                                 } else {
-                                    hash[entryHash.key] =
-                                        toMap(
-                                            entryHash.value as FireStoreORM<*>
-                                        )
+                                    hash[entryHash.key] = toMap(entryHash.value as FireStoreORM<*>)
                                 }
                             } else hash[entryHash.key] = entryHash.value
                         }
@@ -227,10 +188,7 @@ class DataParse private constructor() {
                         map[entry.key] = hash
                     }
                     FireStoreORM::class.java.isAssignableFrom(field.type) -> {
-                        map[entry.key] =
-                            toMap(
-                                field.get(ref) as FireStoreORM<*>
-                            )
+                        map[entry.key] = toMap(field.get(ref) as FireStoreORM<*>)
                     }
                     Timestamp::class.java.isAssignableFrom(field.type) -> {
                         val ta = field.getAnnotation(TimestampAction::class.java)
@@ -256,32 +214,18 @@ class DataParse private constructor() {
                     if (any is Timestamp) any
                     else if (any is MutableMap<*, *>) {
                         val map = any as MutableMap<String, Any?>
-                        val second: Long? =
-                            Utils.convertInLong(
-                                map["_second"]
-                            )
-                        val nanoSeconds: Int? =
-                            Utils.convertInInt(
-                                map["_nanoseconds"]
-                            )
+                        val second: Long? = Utils.convertInLong(map["_second"])
+                        val nanoSeconds: Int? = Utils.convertInInt(map["_nanoseconds"])
 
                         if (second != null && nanoSeconds != null) {
                             Timestamp(second, nanoSeconds)
                         } else null
                     } else null
                 }
-                clazz == Long::class.javaObjectType && any is Number -> Utils.convertInLong(
-                    any
-                )
-                clazz == Double::class.javaObjectType && any is Number -> Utils.convertInDouble(
-                    any
-                )
-                clazz == Float::class.javaObjectType && any is Number -> Utils.convertInFloat(
-                    any
-                )
-                clazz == Int::class.javaObjectType && any is Number -> Utils.convertInInt(
-                    any
-                )
+                clazz == Long::class.javaObjectType && any is Number -> Utils.convertInLong(any)
+                clazz == Double::class.javaObjectType && any is Number -> Utils.convertInDouble(any)
+                clazz == Float::class.javaObjectType && any is Number -> Utils.convertInFloat(any)
+                clazz == Int::class.javaObjectType && any is Number -> Utils.convertInInt(any)
                 clazz == Boolean::class.javaObjectType -> {
                     if (any !is Boolean) false
                     else any

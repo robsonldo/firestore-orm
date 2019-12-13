@@ -82,12 +82,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
                 if (snap != null && snap.exists()) {
                     try {
-                        onListenerGet.onListener(
-                            DataParse.documentSnapshotInObject(
-                                snap,
-                                this as T
-                            )
-                        )
+                        onListenerGet.onListener(DataParse.documentSnapshotInObject(snap, this as T))
                     } catch (e1: Exception) {
                         onListenerGet.onError(e1)
                     }
@@ -115,12 +110,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                     else -> {
                         for (snap in task.result!!) {
                             try {
-                                list.add(
-                                    DataParse.documentSnapshotInObject(
-                                        snap,
-                                        this as T
-                                    )
-                                )
+                                list.add(DataParse.documentSnapshotInObject(snap, this as T))
                             } catch (e: Exception) {
                                 onCompletionAll.onError(e)
                             }
@@ -159,12 +149,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                         if (dc.type != DocumentChange.Type.ADDED) continue@loop
 
                         try {
-                            objects.add(
-                                DataParse.documentSnapshotInObject(
-                                    dc.document,
-                                    this::class.java.newInstance() as T
-                                )
-                            )
+                            objects.add(DataParse.documentSnapshotInObject(dc.document, this::class.java.newInstance() as T))
                         } catch (e: Exception) {
                             removeListenerRegistration(registration)
                             onListenerAll.onError(e)
@@ -177,14 +162,11 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                 }
 
                 loop@ for (dc in snap.documentChanges) {
-                    var t: T = this::class.java.newInstance() as T
+                    var t: T
 
                     try {
-                        t =
-                            DataParse.documentSnapshotInObject(
-                                dc.document,
-                                t
-                            )
+                        t = this::class.java.newInstance() as T
+                        t = DataParse.documentSnapshotInObject(dc.document, t)
                     } catch (e: Exception) {
                         removeListenerRegistration(registration)
                         onListenerAll.onError(e)
@@ -218,12 +200,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     @Throws(Exception::class)
     @Suppress("UNCHECKED_CAST")
-    private fun save(
-        map: MutableMap<String, Any?>,
-        df: DocumentReference,
-        merge: Boolean = true,
-        onCompletion: OnCompletion<T>?
-    ) {
+    private fun save(map: MutableMap<String, Any?>, df: DocumentReference, merge: Boolean = true, onCompletion: OnCompletion<T>?) {
         val onSuccessListener = OnSuccessListener<Void> { onCompletion?.onSuccess(this as T) }
         val onFailureListener = OnFailureListener { e -> onCompletion?.onError(e) }
 
@@ -250,29 +227,16 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     private fun validate(verifyId: Boolean = true, exception: (e: Exception) -> Unit): Boolean {
         return when {
-            getACollection() == null -> { exception(
-                FireStoreORMException(
-                    "${getClassName()}: Collection not defined"
-                )
-            ); false }
-            path.trim() == "" -> { exception(
-                FireStoreORMException(
-                    "${getClassName()}: Collection name is null or empty"
-                )
-            ); false }
-            verifyId && id == "" -> { exception(
-                FireStoreORMException(
-                    "${getClassName()}: Id is null"
-                )
-            ); false }
+            getACollection() == null -> { exception(FireStoreORMException("${getClassName()}: Collection not defined")); false }
+            path.trim() == "" -> { exception(FireStoreORMException("${getClassName()}: Collection name is null or empty")); false }
+            verifyId && id == "" -> { exception(FireStoreORMException("${getClassName()}: Id is null")); false }
             else -> true
         }
     }
 
     private fun getClassName() = this::class.java.name
     private fun getCollection(): CollectionReference = database.collection(path)
-    private fun getACollection(): Collection? = this::class.java.getAnnotation(
-        Collection::class.java)
+    private fun getACollection(): Collection? = this::class.java.getAnnotation(Collection::class.java)
 
     private fun getATypeSource(): Source = this::class.java.getAnnotation(TypeSource::class.java)?.value ?: Source.DEFAULT
 
@@ -296,8 +260,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
             when {
                 fieldNotValid(field) -> continue@loop
                 field.isAnnotationPresent(Attribute::class.java) -> {
-                    val attribute: Attribute? = field.getAnnotation(
-                        Attribute::class.java)
+                    val attribute: Attribute? = field.getAnnotation(Attribute::class.java)
                     if (attribute != null) attributes[attribute.value] = field
                     verifyAnnotationId(field)
                 }
@@ -340,8 +303,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     open fun save(merge: Boolean = true, get: Get<T>, error: Error) {
-        save(merge, object :
-            OnCompletion<T> {
+        save(merge, object : OnCompletion<T> {
             override fun onSuccess(obj: T) = get(obj)
             override fun onError(e: Exception) = error(e)
         })
@@ -355,8 +317,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     open fun onGet(onGet: OnGet<T>, error: Error) {
-        onGet(object :
-            OnListenerGet<T> {
+        onGet(object : OnListenerGet<T> {
             override fun onListener(obj: T?) = onGet(obj)
             override fun onError(e: Exception) = error(e)
         })
@@ -365,8 +326,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     open fun all(all: All<T>, error: Error) = findAllQuery(getCollection(), all, error)
 
     open fun findAllQuery(query: Query, all: All<T>, error: Error) {
-        findAllQuery(query, object :
-            OnCompletionAll<T> {
+        findAllQuery(query, object : OnCompletionAll<T> {
             override fun onSuccess(objs: MutableList<T>) = all(objs)
             override fun onError(e: Exception) = error(e)
         })
@@ -378,8 +338,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     @Suppress("UNCHECKED_CAST")
     open fun onFindAllQuery(query: Query, onAllInit: OnAllInit<T>, onAll: OnAll<T>, error: Error) {
-        onFindAllQuery(query, object:
-            OnListenerAll<T> {
+        onFindAllQuery(query, object: OnListenerAll<T> {
             override fun onInit(objects: MutableList<T>) = onAllInit(objects)
             override fun onAdded(obj: T) = onAll(obj, DocumentChange.Type.ADDED)
             override fun onModified(obj: T) = onAll(obj, DocumentChange.Type.MODIFIED)
