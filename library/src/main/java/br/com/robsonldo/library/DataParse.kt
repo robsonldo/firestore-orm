@@ -29,7 +29,9 @@ class DataParse private constructor() {
 
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
-        fun <T: FireStoreORM<*>> fromMap(data: MutableMap<String, Any?>, clazzVariable: Class<*>?, ref: T): T {
+        fun <T: FireStoreORM<*>> fromMap(data: MutableMap<String, Any?>, clazzVariable: Class<*>?,
+                                         ref: T): T {
+
             ref.wasFound = true
 
             if (ref.collection?.valueInObject != true) {
@@ -56,7 +58,9 @@ class DataParse private constructor() {
                             typeClass = clazzVariable
                         }
 
-                        if (typeClass != null && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
+                        if (typeClass != null
+                            && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
+
                             val objects: MutableCollection<FireStoreORM<*>> = mutableListOf()
 
                             if (entry.value is Collection<*>) {
@@ -64,7 +68,9 @@ class DataParse private constructor() {
                                     entry.value as MutableCollection<HashMap<String, Any?>>
 
                                 for (mapArray in mapArrays) {
-                                    val fireStoreORM: FireStoreORM<*> = typeClass.newInstance() as FireStoreORM<*>
+                                    val fireStoreORM: FireStoreORM<*> =
+                                        typeClass.newInstance() as FireStoreORM<*>
+
                                     objects.add(fromMap(mapArray, null, fireStoreORM))
                                 }
                             }
@@ -87,17 +93,25 @@ class DataParse private constructor() {
                             typeClass = type.actualTypeArguments[1] as Class<*>
                         }
 
-                        val hash: MutableMap<String, Any?> = if (TreeMap::class.java.isAssignableFrom(field.type)) {
-                            TreeMap()
-                        } else hashMapOf()
+                        val hash: MutableMap<String, Any?> =
+                            if (TreeMap::class.java.isAssignableFrom(field.type)) {
+                                TreeMap()
+                            } else hashMapOf()
 
                         for (entryHash in entry.value as HashMap<String, Any?>) {
-                            if (typeClass != null && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
-                                var fireStoreORM: FireStoreORM<*> = typeClass.newInstance() as FireStoreORM<*>
-                                fireStoreORM = fromMap(entryHash.value as MutableMap<String, Any?>, null, fireStoreORM)
-                                hash[entryHash.key] = fireStoreORM
+                            if (typeClass != null
+                                && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
 
-                            } else hash[entryHash.key] = manageDefinedTypes(typeClass, entryHash.value)
+                                var fireStoreORM: FireStoreORM<*> =
+                                    typeClass.newInstance() as FireStoreORM<*>
+
+                                fireStoreORM = fromMap(entryHash.value as MutableMap<String, Any?>,
+                                    null, fireStoreORM)
+
+                                hash[entryHash.key] = fireStoreORM
+                            } else {
+                                hash[entryHash.key] = manageDefinedTypes(typeClass, entryHash.value)
+                            }
                         }
 
                         field.set(ref, hash)
@@ -110,8 +124,11 @@ class DataParse private constructor() {
                                 typeClass = type.actualTypeArguments[0] as Class<*>
                             }
 
-                            val fireStoreORM: FireStoreORM<*> = field.type.newInstance() as FireStoreORM<*>
-                            field.set(ref, fromMap(entry.value as MutableMap<String, Any?>, typeClass, fireStoreORM))
+                            val fireStoreORM: FireStoreORM<*> =
+                                field.type.newInstance() as FireStoreORM<*>
+
+                            field.set(ref, fromMap(entry.value as MutableMap<String, Any?>,
+                                typeClass, fireStoreORM))
                         }
                     }
                     else -> field.set(ref, manageDefinedTypes(field.type, entry.value))
@@ -176,7 +193,9 @@ class DataParse private constructor() {
 
                         val hash: MutableMap<String, Any?> = hashMapOf()
                         for (entryHash in field.get(ref) as MutableMap<String, Any?>) {
-                            if (typeClass != null && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
+                            if (typeClass != null
+                                && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
+
                                 if (entryHash.value == null) {
                                     hash[entryHash.key] = null
                                 } else {

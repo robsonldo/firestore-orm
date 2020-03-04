@@ -149,7 +149,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                         if (dc.type != DocumentChange.Type.ADDED) continue@loop
 
                         try {
-                            objects.add(DataParse.documentSnapshotInObject(dc.document, this::class.java.newInstance() as T))
+                            objects.add(DataParse.documentSnapshotInObject(dc.document,
+                                this::class.java.newInstance() as T))
+
                         } catch (e: Exception) {
                             removeListenerRegistration(registration)
                             onListenerAll.onError(e)
@@ -200,7 +202,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     @Throws(Exception::class)
     @Suppress("UNCHECKED_CAST")
-    private fun save(map: MutableMap<String, Any?>, df: DocumentReference, merge: Boolean = true, onCompletion: OnCompletion<T>?) {
+    private fun save(map: MutableMap<String, Any?>, df: DocumentReference, merge: Boolean = true,
+                     onCompletion: OnCompletion<T>?) {
+
         val onSuccessListener = OnSuccessListener<Void> { onCompletion?.onSuccess(this as T) }
         val onFailureListener = OnFailureListener { e -> onCompletion?.onError(e) }
 
@@ -227,9 +231,18 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     private fun validate(verifyId: Boolean = true, exception: (e: Exception) -> Unit): Boolean {
         return when {
-            getACollection() == null -> { exception(FireStoreORMException("${getClassName()}: Collection not defined")); false }
-            path.trim() == "" -> { exception(FireStoreORMException("${getClassName()}: Collection name is null or empty")); false }
-            verifyId && id == "" -> { exception(FireStoreORMException("${getClassName()}: Id is null")); false }
+            getACollection() == null -> {
+                exception(FireStoreORMException("${getClassName()}: Collection not defined"))
+                false
+            }
+            path.trim() == "" -> {
+                exception(FireStoreORMException("${getClassName()}: Collection name is null or empty"))
+                false
+            }
+            verifyId && id == "" -> {
+                exception(FireStoreORMException("${getClassName()}: Id is null"))
+                false
+            }
             else -> true
         }
     }
@@ -238,7 +251,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     private fun getCollection(): CollectionReference = database.collection(path)
     private fun getACollection(): Collection? = this::class.java.getAnnotation(Collection::class.java)
 
-    private fun getATypeSource(): Source = this::class.java.getAnnotation(TypeSource::class.java)?.value ?: Source.DEFAULT
+    private fun getATypeSource(): Source {
+        return this::class.java.getAnnotation(TypeSource::class.java)?.value ?: Source.DEFAULT
+    }
 
     private fun persisted() {
         val persisted = this::class.java.getAnnotation(Persisted::class.java)
@@ -268,7 +283,8 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                 field.isAnnotationPresent(AttributeCollection::class.java)
                         && FireStoreORM::class.java.isAssignableFrom(field.type) -> {
 
-                    attributeCollections.add(Pair(field, field.getAnnotation(AttributeCollection::class.java)))
+                    attributeCollections.add(Pair(field,
+                        field.getAnnotation(AttributeCollection::class.java)))
                 }
                 else -> {
                     attributes[field.name] = field
@@ -282,7 +298,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     private fun verifyAnnotationId(field: Field) {
-        if (field.isAnnotationPresent(Id::class.java) && String::class.java.isAssignableFrom(field.type)) {
+        if (field.isAnnotationPresent(Id::class.java)
+            && String::class.java.isAssignableFrom(field.type)) {
+
             fieldId = field
         }
     }
@@ -298,8 +316,10 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     private fun removeListenerRegistration(registration: ListenerRegistration?) {
-        registration?.remove()
-        onListenerRegistrations.remove(registration)
+        registration?.let {
+            it.remove()
+            onListenerRegistrations.remove(it)
+        }
     }
 
     open fun save(merge: Boolean = true, get: Get<T>, error: Error) {
