@@ -55,7 +55,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     open fun get(onCompletion: OnCompletion<T>) {
         if (!validate { e -> onCompletion.onError(e) }) return
 
-        getCollection()
+        getCollectionReference()
             .document(id)
             .get(typeSource)
             .addOnSuccessListener { snap ->
@@ -72,7 +72,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     open fun onGet(onListenerGet: OnListenerGet<T>) {
         if (!validate(true) { e -> onListenerGet.onError(e) }) return
 
-        val registration: ListenerRegistration = getCollection()
+        val registration: ListenerRegistration = getCollectionReference()
             .document(id)
             .addSnapshotListener { snap, e ->
                 if (e != null) {
@@ -94,7 +94,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         onListenerRegistrations.add(registration)
     }
 
-    open fun all(onCompletionAll: OnCompletionAll<T>) = findAllQuery(getCollection(), onCompletionAll)
+    open fun all(onCompletionAll: OnCompletionAll<T>) = findAllQuery(getCollectionReference(), onCompletionAll)
 
     @Suppress("UNCHECKED_CAST")
     open fun findAllQuery(query: Query, onCompletionAll: OnCompletionAll<T>) {
@@ -122,7 +122,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
             }
     }
 
-    open fun onAll(onListenerAll: OnListenerAll<T>) = onFindAllQuery(getCollection(), onListenerAll)
+    open fun onAll(onListenerAll: OnListenerAll<T>) = onFindAllQuery(getCollectionReference(), onListenerAll)
 
     @Suppress("UNCHECKED_CAST")
     open fun onFindAllQuery(query: Query, onListenerAll: OnListenerAll<T>) {
@@ -132,7 +132,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         val objects: MutableList<T> = mutableListOf()
 
         var registration: ListenerRegistration? = null
-        registration = getCollection()
+        registration = getCollectionReference()
             .addSnapshotListener { snap, e ->
                 if (e != null) {
                     onListenerAll.onError(e)
@@ -193,7 +193,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         if (!validate { e -> onCompletion?.onError(e) }) return
 
         try {
-            val df = getCollection().document(id)
+            val df = getCollectionReference().document(id)
             save(DataParse.toMap(this), df, merge, onCompletion)
         } catch (e: Exception) {
             onCompletion?.onError(e)
@@ -225,7 +225,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     private fun generateKey(): String {
         var id: String? = null
         fieldId?.let { it.isAccessible = true; id = it.get(this) as String? }
-        id = id ?: getCollection().document().id
+        id = id ?: getCollectionReference().document().id
         return id as String
     }
 
@@ -247,11 +247,11 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         }
     }
 
-    private fun getClassName() = this::class.java.name
-    private fun getCollection(): CollectionReference = database.collection(path)
-    private fun getACollection(): Collection? = this::class.java.getAnnotation(Collection::class.java)
+    fun getClassName() = this::class.java.name
+    fun getCollectionReference(): CollectionReference = database.collection(path)
+    fun getACollection(): Collection? = this::class.java.getAnnotation(Collection::class.java)
 
-    private fun getATypeSource(): Source {
+    fun getATypeSource(): Source {
         return this::class.java.getAnnotation(TypeSource::class.java)?.value ?: Source.DEFAULT
     }
 
@@ -343,7 +343,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         })
     }
 
-    open fun all(all: All<T>, error: Error) = findAllQuery(getCollection(), all, error)
+    open fun all(all: All<T>, error: Error) = findAllQuery(getCollectionReference(), all, error)
 
     open fun findAllQuery(query: Query, all: All<T>, error: Error) {
         findAllQuery(query, object : OnCompletionAll<T> {
@@ -353,7 +353,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     open fun onAll(onAllInit: OnAllInit<T>, onAll: OnAll<T>, error: Error) {
-        onFindAllQuery(getCollection(), onAllInit, onAll, error)
+        onFindAllQuery(getCollectionReference(), onAllInit, onAll, error)
     }
 
     @Suppress("UNCHECKED_CAST")
