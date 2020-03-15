@@ -110,7 +110,8 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                     else -> {
                         for (snap in task.result!!) {
                             try {
-                                list.add(DataParse.documentSnapshotInObject(snap, this as T))
+                                list.add(DataParse.documentSnapshotInObject(snap,
+                                    this::class.java.newInstance() as T))
                             } catch (e: Exception) {
                                 onCompletionAll.onError(e)
                             }
