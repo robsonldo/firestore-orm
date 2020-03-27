@@ -162,6 +162,7 @@ class DataParse private constructor() {
 
                 when {
                     field.get(ref) == null && !Timestamp::class.java.isAssignableFrom(field.type) -> {
+                        map[entry.key] = null
                         continue@loop
                     }
                     Collection::class.java.isAssignableFrom(field.type) -> {
