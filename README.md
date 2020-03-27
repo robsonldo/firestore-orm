@@ -1,4 +1,4 @@
 # firestore-orm
-Simple Firestore ORM Android
+**Simple Firestore ORM Android**
 
-implementation 'com.github.robsonldo:firestore-orm:0.0.1-beta'
+implementation 'com.github.robsonldo:firestore-orm:0.0.5-beta'
