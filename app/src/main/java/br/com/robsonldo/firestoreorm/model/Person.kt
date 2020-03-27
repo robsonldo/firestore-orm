@@ -8,7 +8,7 @@ import com.google.firebase.firestore.Source
 
 @Persisted(false)
 @TypeSource(Source.SERVER)
-@Collection("Person")
+@Collection("person")
 class Person() : FireStoreORM<Person>() {
 
     constructor(id: String, vararg params: String) : this() {
@@ -24,6 +24,9 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("age")
     var age: Int? = null
 
+    @Attribute("luckyNumber")
+    var luckyNumber: Int? = null
+
     @Id
     @Attribute("id")
     var key: String? = null
@@ -33,6 +36,14 @@ class Person() : FireStoreORM<Person>() {
 
     @Attribute("address")
     var address: Address? = null
+
+    @TimestampAction(create = true)
+    @Attribute("createdAt")
+    var createdAt: Timestamp? = null
+
+    @TimestampAction(update = true)
+    @Attribute("updatedAt")
+    var updatedAt: Timestamp? = null
 
     var active: Boolean? = null
 }

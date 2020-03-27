@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
 
         person.apply {
             name = "Will"
-            lastName = "Doe"
+            lastName = "James"
             age =  30
             active = true
             address = Address("Street X", "District Y", 111)

@@ -161,7 +161,9 @@ class DataParse private constructor() {
                 if (field.isAnnotationPresent(ReadOnly::class.java)) continue@loop
 
                 when {
-                    field.get(ref) == null -> continue@loop
+                    field.get(ref) == null && !Timestamp::class.java.isAssignableFrom(field.type) -> {
+                        continue@loop
+                    }
                     Collection::class.java.isAssignableFrom(field.type) -> {
                         val type = field.genericType as ParameterizedType
                         val typeClass: Class<*> = type.actualTypeArguments[0] as Class<*>
@@ -211,8 +213,9 @@ class DataParse private constructor() {
                     }
                     Timestamp::class.java.isAssignableFrom(field.type) -> {
                         val ta = field.getAnnotation(TimestampAction::class.java)
-                        if (ta == null) map[entry.key] = field.get(ref)
-                        else if ((ta.create && field.get(ref) == null) || ta.update) {
+                        if (ta == null) {
+                            field.get(ref)?.let { map[entry.key] = field.get(ref) }
+                        } else if ((ta.create && field.get(ref) == null) || ta.update) {
                             map[entry.key] = FieldValue.serverTimestamp()
                             field.set(ref, Timestamp(Date()))
                         }
