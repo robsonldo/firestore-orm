@@ -113,7 +113,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                                 list.add(DataParse.documentSnapshotInObject(snap,
                                     this::class.java.newInstance() as T))
                             } catch (e: Exception) {
-                                onCompletionAll.onError(e)
+                                return@addOnCompleteListener onCompletionAll.onError(e)
                             }
                         }
 
@@ -137,8 +137,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
             .addSnapshotListener { snap, e ->
                 if (e != null) {
                     onListenerAll.onError(e)
-                    removeListenerRegistration(registration)
-                    return@addSnapshotListener
+                    return@addSnapshotListener removeListenerRegistration(registration)
                 }
 
                 if (snap == null) return@addSnapshotListener
@@ -155,8 +154,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
                         } catch (e: Exception) {
                             removeListenerRegistration(registration)
-                            onListenerAll.onError(e)
-                            return@addSnapshotListener
+                            return@addSnapshotListener onListenerAll.onError(e)
                         }
                     }
 
@@ -172,8 +170,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                         t = DataParse.documentSnapshotInObject(dc.document, t)
                     } catch (e: Exception) {
                         removeListenerRegistration(registration)
-                        onListenerAll.onError(e)
-                        return@addSnapshotListener
+                        return@addSnapshotListener onListenerAll.onError(e)
                     }
 
                     when (dc.type) {
