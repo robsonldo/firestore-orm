@@ -133,7 +133,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         val objects: MutableList<T> = mutableListOf()
 
         var registration: ListenerRegistration? = null
-        registration = getCollectionReference()
+        registration = query
             .addSnapshotListener { snap, e ->
                 if (e != null) {
                     onListenerAll.onError(e)
