@@ -1,4 +1,4 @@
 # firestore-orm
 **Simple Firestore ORM Android**
 
-implementation 'com.github.robsonldo:firestore-orm:0.0.5-beta'
+[![](https://jitpack.io/v/robsonldo/firestore-orm.svg)](https://jitpack.io/#robsonldo/firestore-orm)
