@@ -13,6 +13,7 @@ class Person() : FireStoreORM<Person>() {
 
     constructor(id: String, vararg params: String) : this() {
         this.id = id
+        this.params = arrayOf(*params)
     }
 
     @Attribute("name")

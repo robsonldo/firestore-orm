@@ -1,12 +1,12 @@
 package br.com.robsonldo.library
 
+import br.com.robsonldo.library.annotations.*
+import br.com.robsonldo.library.annotations.Collection
 import br.com.robsonldo.library.exceptions.FireStoreORMException
 import br.com.robsonldo.library.interfaces.OnCompletion
 import br.com.robsonldo.library.interfaces.OnCompletionAll
 import br.com.robsonldo.library.interfaces.OnListenerAll
 import br.com.robsonldo.library.interfaces.OnListenerGet
-import br.com.robsonldo.library.annotations.*
-import br.com.robsonldo.library.annotations.Collection
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.firestore.*
@@ -23,7 +23,10 @@ typealias Error = (e: Exception?) -> Unit
 abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     var id: String = ""
-        get() { field = if (field != "") field else generateKey(); return field }
+        get() {
+            field = if (field != "") field else generateKey();
+            return field
+        }
 
     var path: String = ""
         private set
@@ -35,6 +38,10 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         internal set
 
     var params: Array<String> = arrayOf()
+        set(value) {
+            field = value
+            initPath()
+        }
 
     @Transient private val database: FirebaseFirestore = FirebaseFirestore.getInstance()
     @Transient val collection: Collection? = getACollection()
@@ -263,7 +270,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     private fun initPath() {
         path = collection?.value ?: ""
         if (collection?.params.equals("") || params.isEmpty()) return
-        path = String.format(String.format("%s%s", path, collection?.params), params)
+        path = String.format(String.format("%s%s", path, collection?.params), *params)
     }
 
     private fun managerFields(clazz: Class<*>) {
