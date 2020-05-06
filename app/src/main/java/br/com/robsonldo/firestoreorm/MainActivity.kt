@@ -7,7 +7,6 @@ import br.com.robsonldo.firestoreorm.model.Address
 import br.com.robsonldo.firestoreorm.model.Person
 import br.com.robsonldo.library.interfaces.OnCompletion
 import br.com.robsonldo.library.interfaces.OnCompletionAll
-import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 

@@ -2,14 +2,13 @@ package br.com.robsonldo.library
 
 import br.com.robsonldo.library.annotations.ReadOnly
 import br.com.robsonldo.library.annotations.TimestampAction
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.Timestamp
 import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.TypeVariable
 import java.util.*
-import kotlin.collections.HashMap
 
 class DataParse private constructor() {
 

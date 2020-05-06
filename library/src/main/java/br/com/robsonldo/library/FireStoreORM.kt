@@ -117,8 +117,11 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                     else -> {
                         for (snap in task.result!!) {
                             try {
-                                list.add(DataParse.documentSnapshotInObject(snap,
-                                    this::class.java.newInstance() as T))
+                                list.add(DataParse.documentSnapshotInObject(
+                                    snap,
+                                    this::class.java.newInstance() as T)
+                                        .apply { managerObjectByCaller(this@FireStoreORM) }
+                                )
                             } catch (e: Exception) {
                                 return@addOnCompleteListener onCompletionAll.onError(e)
                             }
@@ -156,8 +159,11 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                         if (dc.type != DocumentChange.Type.ADDED) continue@loop
 
                         try {
-                            objects.add(DataParse.documentSnapshotInObject(dc.document,
-                                this::class.java.newInstance() as T))
+                            objects.add(DataParse.documentSnapshotInObject(
+                                dc.document,
+                                this::class.java.newInstance() as T)
+                                    .apply { managerObjectByCaller(this@FireStoreORM) }
+                            )
 
                         } catch (e: Exception) {
                             removeListenerRegistration(registration)
@@ -174,7 +180,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
                     try {
                         t = this::class.java.newInstance() as T
-                        t = DataParse.documentSnapshotInObject(dc.document, t)
+                        t = DataParse.documentSnapshotInObject(dc.document, t).apply {
+                            managerObjectByCaller(this@FireStoreORM)
+                        }
                     } catch (e: Exception) {
                         removeListenerRegistration(registration)
                         return@addSnapshotListener onListenerAll.onError(e)
@@ -191,8 +199,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         onListenerRegistrations.add(registration)
     }
 
-    open fun save(merge: Boolean = true, onCompletion: OnCompletion<T>? = null) =
+    open fun save(merge: Boolean = true, onCompletion: OnCompletion<T>? = null) {
         prepareToSave(merge, onCompletion)
+    }
 
     private fun prepareToSave(merge: Boolean = true, onCompletion: OnCompletion<T>? = null) {
         if (!validate { e -> onCompletion?.onError(e) }) return
@@ -271,6 +280,10 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         path = collection?.value ?: ""
         if (collection?.params.equals("") || params.isEmpty()) return
         path = String.format(String.format("%s%s", path, collection?.params), *params)
+    }
+
+    fun managerObjectByCaller(caller: FireStoreORM<T>) {
+        if (caller.params.isNotEmpty()) { params = caller.params }
     }
 
     private fun managerFields(clazz: Class<*>) {
