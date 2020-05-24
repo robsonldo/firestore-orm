@@ -18,7 +18,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val personA = Person("jMPqV5IfcGqpCczrE8t3")
+        val personA = Person()
 
         personA.apply {
             name = "Will"
