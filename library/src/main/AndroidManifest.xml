@@ -1,2 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="br.com.robsonldo.library" />
+<manifest package="br.com.robsonldo.library" />

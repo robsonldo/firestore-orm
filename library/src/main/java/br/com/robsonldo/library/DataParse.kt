@@ -7,13 +7,13 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
-import java.lang.reflect.TypeVariable
 import java.util.*
 
 class DataParse private constructor() {
 
     companion object {
 
+        @JvmStatic
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
         fun <T: FireStoreORM<*>> documentSnapshotInObject(document: DocumentSnapshot, ref: T): T {
@@ -26,11 +26,14 @@ class DataParse private constructor() {
             }
         }
 
+        @JvmStatic
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
-        fun <T: FireStoreORM<*>> fromMap(data: MutableMap<String, Any?>, clazzVariable: Class<*>?,
-                                         ref: T): T {
-
+        fun <T: FireStoreORM<*>> fromMap(
+            data: MutableMap<String, Any?>,
+            clazzVariable: Class<*>?,
+            ref: T
+        ): T {
             ref.wasFound = true
 
             if (ref.collection?.valueInObject != true) {
@@ -48,36 +51,17 @@ class DataParse private constructor() {
 
                 when {
                     Collection::class.java.isAssignableFrom(field.type) -> {
-                        val type = field.genericType as ParameterizedType
-                        var typeClass: Class<*>? = null
-
-                        if (type.actualTypeArguments[0] is Class<*>) {
-                            typeClass = type.actualTypeArguments[0] as Class<*>
-                        } else if (type.actualTypeArguments[0] is TypeVariable<*>) {
-                            typeClass = clazzVariable
+                        if (entry.value == null || entry.value !is Collection<*>) {
+                            field.set(ref, null)
+                            continue@loop
                         }
 
-                        if (typeClass != null
-                            && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
-
-                            val objects: MutableCollection<FireStoreORM<*>> = mutableListOf()
-
-                            if (entry.value is Collection<*>) {
-                                val mapArrays: MutableCollection<HashMap<String, Any?>> =
-                                    entry.value as MutableCollection<HashMap<String, Any?>>
-
-                                for (mapArray in mapArrays) {
-                                    val fireStoreORM: FireStoreORM<*> =
-                                        typeClass.newInstance() as FireStoreORM<*>
-
-                                    objects.add(fromMap(mapArray, null, fireStoreORM))
-                                }
-                            }
-
-                            field.set(ref, objects)
-                        } else {
-                            field.set(ref, entry.value)
-                        }
+                        val pt = field.genericType as ParameterizedType
+                        field.set(ref, collectionFromMap(
+                            pt,
+                            entry.value as MutableCollection<Any?>,
+                            pt.rawType as Class<MutableCollection<Any?>>
+                        ))
                     }
                     MutableMap::class.java.isAssignableFrom(field.type) -> {
                         if (entry.value == null || entry.value !is MutableMap<*, *>) {
@@ -85,35 +69,12 @@ class DataParse private constructor() {
                             continue@loop
                         }
 
-                        val type = field.genericType as ParameterizedType
-                        var typeClass: Class<*>? = null
-
-                        if (type.actualTypeArguments[1] is Class<*>) {
-                            typeClass = type.actualTypeArguments[1] as Class<*>
-                        }
-
-                        val hash: MutableMap<String, Any?> =
-                            if (TreeMap::class.java.isAssignableFrom(field.type)) {
-                                TreeMap()
-                            } else hashMapOf()
-
-                        for (entryHash in entry.value as HashMap<String, Any?>) {
-                            if (typeClass != null
-                                && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
-
-                                var fireStoreORM: FireStoreORM<*> =
-                                    typeClass.newInstance() as FireStoreORM<*>
-
-                                fireStoreORM = fromMap(entryHash.value as MutableMap<String, Any?>,
-                                    null, fireStoreORM)
-
-                                hash[entryHash.key] = fireStoreORM
-                            } else {
-                                hash[entryHash.key] = manageDefinedTypes(typeClass, entryHash.value)
-                            }
-                        }
-
-                        field.set(ref, hash)
+                        val pt = field.genericType as ParameterizedType
+                        field.set(ref, mapFromMap(
+                            pt,
+                            entry.value as MutableMap<String, Any?>,
+                            pt.rawType as Class<MutableMap<String, Any?>>
+                        ))
                     }
                     FireStoreORM::class.java.isAssignableFrom(field.type) -> {
                         if (entry.value is MutableMap<*, *>) {
@@ -137,6 +98,7 @@ class DataParse private constructor() {
             return ref
         }
 
+        @JvmStatic
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
         fun <T: FireStoreORM<*>> toMap(ref: T): MutableMap<String, Any?> {
@@ -162,51 +124,16 @@ class DataParse private constructor() {
                 when {
                     field.get(ref) == null && !Timestamp::class.java.isAssignableFrom(field.type) -> {
                         map[entry.key] = null
-                        continue@loop
                     }
                     Collection::class.java.isAssignableFrom(field.type) -> {
-                        val type = field.genericType as ParameterizedType
-                        val typeClass: Class<*> = type.actualTypeArguments[0] as Class<*>
-
-                        if (FireStoreORM::class.java.isAssignableFrom(typeClass)) {
-                            val objects = field.get(ref) as MutableList<FireStoreORM<*>>
-                            if (objects.isEmpty()) continue@loop
-
-                            val objectsMap: MutableList<MutableMap<String, Any?>> = mutableListOf()
-                            for (obj in objects) objectsMap.add(toMap(obj))
-
-                            map[entry.key] = objectsMap
-                        } else {
-                            map[entry.key] = field.get(ref)!!
+                        field.get(ref)?.let {
+                            map[entry.key] = collectionToMap(it as MutableCollection<Any?>)
                         }
                     }
                     MutableMap::class.java.isAssignableFrom(field.type) -> {
-                        if (field.get(ref) == null) {
-                            map[entry.key] = null
-                            continue@loop
+                        field.get(ref)?.let {
+                            map[entry.key] = mapToMap(it as MutableMap<String, Any?>)
                         }
-
-                        val type: ParameterizedType = field.genericType as ParameterizedType
-                        var typeClass: Class<*>? = null
-
-                        if (type.actualTypeArguments[1] is Class<*>) {
-                            typeClass = type.actualTypeArguments[1] as Class<*>
-                        }
-
-                        val hash: MutableMap<String, Any?> = hashMapOf()
-                        for (entryHash in field.get(ref) as MutableMap<String, Any?>) {
-                            if (typeClass != null
-                                && FireStoreORM::class.java.isAssignableFrom(typeClass)) {
-
-                                if (entryHash.value == null) {
-                                    hash[entryHash.key] = null
-                                } else {
-                                    hash[entryHash.key] = toMap(entryHash.value as FireStoreORM<*>)
-                                }
-                            } else hash[entryHash.key] = entryHash.value
-                        }
-
-                        map[entry.key] = hash
                     }
                     FireStoreORM::class.java.isAssignableFrom(field.type) -> {
                         map[entry.key] = toMap(field.get(ref) as FireStoreORM<*>)
@@ -227,9 +154,191 @@ class DataParse private constructor() {
             return map
         }
 
+        @JvmStatic
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
-        private fun manageDefinedTypes(clazz: Class<*>?, any: Any?): Any? {
+        fun <T: FireStoreORM<*>> getValueInField(ref: T, fieldName: String): Any? {
+
+            fun accessingFieldsMap(
+                map: MutableMap<*, *>,
+                fields: List<String>
+            ): Pair<Any?, List<String>> {
+                if (fields.isEmpty()) return Pair(map, fields)
+
+                val aAny = map[fields[0]] ?: return Pair(null, fields)
+                val aFields = fields.subList(1, fields.size)
+
+                return if (aAny is MutableMap<*, *> && fields.size > 1) {
+                    accessingFieldsMap(aAny, aFields)
+                } else Pair(aAny, aFields)
+            }
+
+            fun <E: FireStoreORM<*>> accessingFireStoreORM(
+                ref: E,
+                fields: List<String>
+            ): Pair<Any?, List<String>> {
+                if (fields.isEmpty()) return Pair(ref, fields)
+
+                val aField: Field = ref.attributes[fields[0]] ?: return Pair(null, fields)
+                val aFields = fields.subList(1, fields.size)
+
+                aField.isAccessible = true
+
+                val aAny = aField.get(ref) ?: return Pair(null, fields)
+                return if (aAny is FireStoreORM<*> && fields.size > 1) {
+                    accessingFireStoreORM(aAny, aFields)
+                } else Pair(aAny, aFields)
+            }
+
+            var fields = fieldName.split(".")
+            val field: Field = ref.attributes[fields[0]] ?: return null
+            fields = fields.subList(1, fields.size)
+
+            field.isAccessible = true
+            var any: Any? = field.get(ref) ?: return null
+
+            loop@ while (true) {
+                when (any) {
+                    is MutableMap<*, *> -> {
+                        if (fields.isEmpty()) break@loop
+
+                        val pair = accessingFieldsMap(any, fields)
+                        fields = pair.second
+                        any = pair.first
+                    }
+                    is FireStoreORM<*> -> {
+                        if (fields.isEmpty()) {
+                            any = toMap(any)
+                            break@loop
+                        }
+
+                        val pair = accessingFireStoreORM(any, fields)
+                        fields = pair.second
+                        any = pair.first
+                    }
+                    else -> break@loop
+                }
+            }
+
+            return valueToMap(any)
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun <E: MutableMap<String, Any?>> mapFromMap(
+            pt: ParameterizedType,
+            map: MutableMap<String, Any?>,
+            mapClazz: Class<MutableMap<String, Any?>>
+        ): E {
+            val cMap = if (mapClazz == Map::class.java) {
+                mutableMapOf<String, Any?>()
+            } else {
+                mapClazz.newInstance() as E
+            }
+
+            val ptAndClazz = Utils.getParameterizedTypeArgumentPosition(pt, 1)
+            val cPt = ptAndClazz?.first ?: pt
+            val clazz: Class<*> = ptAndClazz?.second ?: Class::class.java
+
+            for (entry in map) {
+                entry.value?.let { cMap[entry.key] = valueFromMap(it, clazz, cPt) }
+            }
+
+            return cMap as E
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun <E: MutableCollection<Any?>> collectionFromMap(
+            pt: ParameterizedType,
+            collection: MutableCollection<Any?>,
+            collectionClazz: Class<MutableCollection<Any?>>
+        ): E {
+            val cCollection = when (collectionClazz) {
+                MutableCollection::class.java, List::class.java -> mutableListOf<Any?>()
+                Set::class.java -> mutableSetOf<Any?>()
+                SortedSet::class.java, NavigableSet::class.java -> TreeSet<Any?>()
+                Deque::class.java, Queue::class.java -> ArrayDeque<Any?>()
+                else -> collectionClazz.newInstance() as E
+            }
+
+            val ptAndClazz = Utils.getParameterizedTypeArgumentPosition(pt, 0)
+            val cPt = ptAndClazz?.first ?: pt
+            val clazz: Class<*> = ptAndClazz?.second ?: Class::class.java
+
+            for (i in collection) {
+                i?.let { cCollection.add(valueFromMap(it, clazz, cPt)) }
+            }
+
+            return cCollection as E
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun mapToMap(map: MutableMap<String, Any?>): MutableMap<String, Any?> {
+            val cMap: MutableMap<String, Any?> = mutableMapOf()
+            for (entry in map) { cMap[entry.key] = valueToMap(entry.value) }
+            return cMap
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun collectionToMap(collection: MutableCollection<Any?>): MutableCollection<Any?> {
+            val cCollection: MutableCollection<Any?> = mutableListOf()
+            for (i in collection) { cCollection.add(valueToMap(i)) }
+            return cCollection
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun valueToMap(any: Any?): Any? {
+            return when (any) {
+                is FireStoreORM<*> -> toMap(any)
+                is MutableMap<*, *> -> mapToMap(any as MutableMap<String, Any?>)
+                is MutableCollection<*> -> collectionToMap(any as MutableCollection<Any?>)
+                else -> any
+            }
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun valueFromMap(any: Any, clazz: Class<*>, pt: ParameterizedType? = null): Any? {
+            return when {
+                FireStoreORM::class.java.isAssignableFrom(clazz) -> {
+                    fromMap(
+                        any as MutableMap<String, Any?>,
+                        null,
+                        clazz.newInstance() as FireStoreORM<*>
+                    )
+                }
+                MutableMap::class.java.isAssignableFrom(clazz) && pt != null -> {
+                    mapFromMap(
+                        pt,
+                        any as MutableMap<String, Any?>,
+                        clazz as Class<MutableMap<String, Any?>>
+                    )
+                }
+                MutableCollection::class.java.isAssignableFrom(clazz) && pt != null -> {
+                    collectionFromMap(
+                        pt,
+                        any as MutableCollection<Any?>,
+                        clazz as Class<MutableCollection<Any?>>
+                    )
+                }
+                else -> manageDefinedTypes(clazz, any)
+            }
+        }
+
+        @JvmStatic
+        @Throws(Exception::class)
+        @Suppress("UNCHECKED_CAST")
+        fun manageDefinedTypes(clazz: Class<*>?, any: Any?): Any? {
             return when {
                 clazz == null -> null
                 Timestamp::class.java.isAssignableFrom(clazz) -> {

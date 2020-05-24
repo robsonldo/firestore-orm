@@ -8,7 +8,7 @@ import com.google.firebase.firestore.Source
 
 @Persisted(false)
 @TypeSource(Source.SERVER)
-@Collection("person")
+@Collection("persons")
 class Person() : FireStoreORM<Person>() {
 
     constructor(id: String, vararg params: String) : this() {
@@ -25,9 +25,6 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("age")
     var age: Int? = null
 
-    @Attribute("luckyNumber")
-    var luckyNumber: Int? = null
-
     @Id
     @Attribute("id")
     var key: String? = null
@@ -35,8 +32,8 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("birth")
     var birth: Timestamp? = null
 
-    @Attribute("address")
-    var address: Address? = null
+    @Attribute("currentAddress")
+    var myAddress: Address? = null
 
     @TimestampAction(create = true)
     @Attribute("createdAt")
@@ -46,5 +43,12 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("updatedAt")
     var updatedAt: Timestamp? = null
 
-    var active: Boolean? = null
+    var lastAddress: MutableMap<String, MutableMap<String, Address?>?> = mutableMapOf()
+    var features: MutableMap<String, Boolean> = mutableMapOf()
+
+    var luckyNumbers: MutableList<String> = mutableListOf()
+    var friendsAddresses: MutableList<Address> = mutableListOf()
+    var myAddresses: MutableList<MutableMap<String, Address>> = mutableListOf()
+
+    var active: Boolean = true
 }

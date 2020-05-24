@@ -18,19 +18,42 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val person = Person()
+        val personA = Person("jMPqV5IfcGqpCczrE8t3")
 
-        person.apply {
+        personA.apply {
             name = "Will"
             lastName = "James"
-            age =  30
+            age = 18
             active = true
-            address = Address("Street X", "District Y", 111)
+            myAddress = Address("Street X", "District Y", 1)
+
+            lastAddress["1"] = mutableMapOf<String, Address?>(
+                "11" to Address("Street B", "District B", 11)
+            )
+
+            lastAddress["2"] = mutableMapOf<String, Address?>(
+                "22" to Address("Street A", "District A", 3)
+            )
+
+            features = mutableMapOf("tall" to true, "cool" to true, "nerd" to false)
+            luckyNumbers = mutableListOf("10", "51", "48")
+
+            friendsAddresses = mutableListOf(
+                Address("Street L1 A", "District L1 A", 1),
+                Address("Street L2 B", "District L2 B", 2)
+            )
+
+            myAddresses = mutableListOf(
+                mutableMapOf(
+                    "Home" to (myAddress ?: Address()),
+                    "Work" to Address("Street W", "District W", 5)
+            ))
         }
 
-        person.save(onCompletion = object : OnCompletion<Person> {
+        /* saving the entire object */
+        personA.save(onCompletion = object : OnCompletion<Person> {
             override fun onSuccess(obj: Person) {
-                Log.e(TAG, "Save success")
+                Log.e(TAG, "saved object id: ${obj.id}")
             }
 
             override fun onError(e: Exception) {
@@ -38,9 +61,23 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        person.all(object : OnCompletionAll<Person> {
+        /* specifically updating an attribute */
+        personA.lastAddress["2"]?.let { it["22"]?.apply { number = 13 } }
+        personA.updateFieldValue("lastAddress.2.22.number", onCompletion = object : OnCompletion<Person> {
+            override fun onSuccess(obj: Person) {
+                Log.e(TAG, "updated object id: ${obj.id}")
+            }
+
+            override fun onError(e: Exception) {
+                Log.e(TAG, e.message ?: "Error")
+            }
+        })
+
+
+        /* Fetching all objects in the collection */
+        Person().all(object : OnCompletionAll<Person> {
             override fun onSuccess(objs: MutableList<Person>) {
-                Log.e(TAG, objs.size.toString())
+                Log.e(TAG, "number of people: ${objs.size}")
             }
 
             override fun onError(e: Exception) {

@@ -236,6 +236,31 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun updateFieldValue(vararg fields: String, onCompletion: OnCompletion<T>?) {
+        if (!validateUpdateFields(*fields) { e -> onCompletion?.onError(e) }) return
+
+        try {
+            val fieldsAndValues: MutableList<Any?> = mutableListOf()
+            val df = getCollectionReference().document(id)
+
+            val field = fields[0]
+            val value: Any? = DataParse.getValueInField(this, fields[0])
+
+            for (i in 1 until fields.size) {
+                fieldsAndValues.add(fields[i])
+                fieldsAndValues.add(DataParse.getValueInField(this, fields[i]))
+            }
+
+            df.update(field, value, *fieldsAndValues.toTypedArray())
+                .addOnSuccessListener { onCompletion?.onSuccess(this as T) }
+                .addOnFailureListener { e -> onCompletion?.onError(e) }
+
+        } catch (e: Exception) {
+            onCompletion?.onError(e)
+        }
+    }
+
     private fun generateKey(): String {
         var id: String? = null
         fieldId?.let { it.isAccessible = true; id = it.get(this) as String? }
@@ -255,6 +280,20 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
             }
             verifyId && id == "" -> {
                 exception(FireStoreORMException("${getClassName()}: Id is null"))
+                false
+            }
+            else -> true
+        }
+    }
+
+    private fun validateUpdateFields(
+        vararg fields: String,
+        exception: (e: Exception) -> Unit
+    ): Boolean {
+        return when {
+            !validate(true) { e -> exception(e) } -> false
+            fields.isEmpty() -> {
+                exception(FireStoreORMException("${getClassName()}: Fields is empty"))
                 false
             }
             else -> true

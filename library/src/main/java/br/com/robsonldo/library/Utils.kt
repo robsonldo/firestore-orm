@@ -1,9 +1,41 @@
 package br.com.robsonldo.library
 
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.WildcardType
+
 class Utils private constructor() {
 
     companion object {
 
+        @JvmStatic
+        @Throws(Exception::class)
+        fun getParameterizedTypeArgumentPosition(
+            pt: ParameterizedType,
+            position: Int
+        ): Pair<ParameterizedType, Class<*>>? {
+            fun valueInPair(
+                pt: ParameterizedType,
+                clazz: Class<*>
+            ) = Pair(pt, clazz)
+
+            var cPt = pt
+            return when(cPt.actualTypeArguments[position]) {
+                is Class<*> -> valueInPair(cPt, cPt.actualTypeArguments[position] as Class<*>)
+                is ParameterizedType -> {
+                    cPt = (cPt.actualTypeArguments[position] as ParameterizedType)
+                    valueInPair(cPt, cPt.rawType as Class<*>)
+                }
+                is WildcardType -> {
+                    cPt = (cPt.actualTypeArguments[position] as WildcardType)
+                        .upperBounds[position] as ParameterizedType
+
+                    valueInPair(cPt, cPt.rawType as Class<*>)
+                }
+                else -> null
+            }
+        }
+
+        @JvmStatic
         fun convertInInt(obj: Any?): Int? {
             return when {
                 obj == null -> null
@@ -17,6 +49,7 @@ class Utils private constructor() {
             }
         }
 
+        @JvmStatic
         fun convertInLong(obj: Any?): Long? {
             return when {
                 obj == null -> null
@@ -30,6 +63,7 @@ class Utils private constructor() {
             }
         }
 
+        @JvmStatic
         fun convertInDouble(obj: Any?): Double? {
             return when {
                 obj == null -> null
@@ -43,6 +77,7 @@ class Utils private constructor() {
             }
         }
 
+        @JvmStatic
         fun convertInFloat(obj: Any?): Float? {
             return when {
                 obj == null -> null
@@ -56,7 +91,10 @@ class Utils private constructor() {
             }
         }
 
+        @JvmStatic
         fun isPrimitive(obj: Any): Boolean = obj::class.javaPrimitiveType != null
+
+        @JvmStatic
         fun String.isNumber() : Boolean = this.matches("^-?\\d+([.,]\\d+)?\$".toRegex())
     }
 }
