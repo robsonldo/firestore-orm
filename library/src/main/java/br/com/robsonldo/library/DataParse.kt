@@ -353,11 +353,19 @@ class DataParse private constructor() {
                         } else null
                     } else null
                 }
-                clazz == Long::class.java && any is Number -> Utils.convertInLong(any)
-                clazz == Double::class.java && any is Number -> Utils.convertInDouble(any)
-                clazz == Float::class.java && any is Number -> Utils.convertInFloat(any)
-                clazz == Int::class.java && any is Number -> Utils.convertInInt(any)
-                clazz == Boolean::class.java -> {
+                (clazz == Long::class.java || clazz == Long::class.javaObjectType)
+                        && any is Number -> Utils.convertInLong(any)
+
+                (clazz == Double::class.java || clazz == Double::class.javaObjectType)
+                        && any is Number -> Utils.convertInDouble(any)
+
+                (clazz == Float::class.java || clazz == Float::class.javaObjectType)
+                        && any is Number -> Utils.convertInFloat(any)
+
+                (clazz == Int::class.java || clazz == Int::class.javaObjectType)
+                        && any is Number -> Utils.convertInInt(any)
+
+                clazz == Boolean::class.java || clazz == Boolean::class.javaObjectType -> {
                     if (any !is Boolean) false
                     else any
                 }
