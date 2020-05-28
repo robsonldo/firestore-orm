@@ -22,8 +22,9 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("lastName")
     var lastName: String? = null
 
+    @ThisIsNotNull /* required in kotlin or in @Attribute canBeNull = false */
     @Attribute("age")
-    var age: Int? = null
+    var age: Int = 3
 
     @Id
     @Attribute("id")

@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         /* saving the entire object */
         personA.save(onCompletion = object : OnCompletion<Person> {
             override fun onSuccess(obj: Person) {
-                Log.e(TAG, "saved object id: ${obj.id}")
+                Log.i(TAG, "saved object id: ${obj.id}")
             }
 
             override fun onError(e: Exception) {
@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
         personA.lastAddress["2"]?.let { it["22"]?.apply { number = 13 } }
         personA.updateFieldValue("lastAddress.2.22.number", onCompletion = object : OnCompletion<Person> {
             override fun onSuccess(obj: Person) {
-                Log.e(TAG, "updated object id: ${obj.id}")
+                Log.i(TAG, "updated object id: ${obj.id}")
             }
 
             override fun onError(e: Exception) {
@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
         /* Fetching all objects in the collection */
         Person().all(object : OnCompletionAll<Person> {
             override fun onSuccess(objs: MutableList<Person>) {
-                Log.e(TAG, "number of people: ${objs.size}")
+                Log.i(TAG, "number of people: ${objs.size}")
             }
 
             override fun onError(e: Exception) {

@@ -1,6 +1,8 @@
 package br.com.robsonldo.library
 
+import br.com.robsonldo.library.annotations.Attribute
 import br.com.robsonldo.library.annotations.ReadOnly
+import br.com.robsonldo.library.annotations.ThisIsNotNull
 import br.com.robsonldo.library.annotations.TimestampAction
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
@@ -45,53 +47,54 @@ class DataParse private constructor() {
                 return ref
             }
 
-            loop@ for (entry in data) {
-                val field: Field = ref.attributes[entry.key] ?: continue
-                field.isAccessible = true
+            loop@ for (entry in ref.attributes) {
+                val value = data[entry.key]
+                val field:Field = entry.value.apply { isAccessible = true }
 
                 when {
-                    Collection::class.java.isAssignableFrom(field.type) -> {
-                        if (entry.value == null || entry.value !is Collection<*>) {
+                    value == null -> {
+                        if (field.getAnnotation(Attribute::class.java)?.canBeNull == true
+                            && !field.isAnnotationPresent(ThisIsNotNull::class.java)) {
+
                             field.set(ref, null)
-                            continue@loop
                         }
+                    }
+                    Collection::class.java.isAssignableFrom(field.type) -> {
+                        if (value !is Collection<*>) continue@loop
 
                         val pt = field.genericType as ParameterizedType
                         field.set(ref, collectionFromMap(
                             pt,
-                            entry.value as MutableCollection<Any?>,
+                            value as MutableCollection<Any?>,
                             pt.rawType as Class<MutableCollection<Any?>>
                         ))
                     }
                     MutableMap::class.java.isAssignableFrom(field.type) -> {
-                        if (entry.value == null || entry.value !is MutableMap<*, *>) {
-                            field.set(ref, null)
-                            continue@loop
-                        }
+                        if (value !is MutableMap<*, *>) continue@loop
 
                         val pt = field.genericType as ParameterizedType
                         field.set(ref, mapFromMap(
                             pt,
-                            entry.value as MutableMap<String, Any?>,
+                            value as MutableMap<String, Any?>,
                             pt.rawType as Class<MutableMap<String, Any?>>
                         ))
                     }
                     FireStoreORM::class.java.isAssignableFrom(field.type) -> {
-                        if (entry.value is MutableMap<*, *>) {
-                            var typeClass: Class<*>? = null
-                            if (field.genericType is ParameterizedType) {
-                                val type = field.genericType as ParameterizedType
-                                typeClass = type.actualTypeArguments[0] as Class<*>
-                            }
+                        if (value !is MutableMap<*, *>) continue@loop
 
-                            val fireStoreORM: FireStoreORM<*> =
-                                field.type.newInstance() as FireStoreORM<*>
-
-                            field.set(ref, fromMap(entry.value as MutableMap<String, Any?>,
-                                typeClass, fireStoreORM))
+                        var typeClass: Class<*>? = null
+                        if (field.genericType is ParameterizedType) {
+                            val type = field.genericType as ParameterizedType
+                            typeClass = type.actualTypeArguments[0] as Class<*>
                         }
+
+                        val fireStoreORM: FireStoreORM<*> =
+                            field.type.newInstance() as FireStoreORM<*>
+
+                        field.set(ref, fromMap(value as MutableMap<String, Any?>,
+                            typeClass, fireStoreORM))
                     }
-                    else -> field.set(ref, manageDefinedTypes(field.type, entry.value))
+                    else -> field.set(ref, manageDefinedTypes(field.type, value))
                 }
             }
 
@@ -116,10 +119,13 @@ class DataParse private constructor() {
             ref.fieldId?.let { it.isAccessible = true; it.set(ref, ref.id) }
 
             loop@ for (entry in ref.attributes) {
-                val field = entry.value
-                field.isAccessible = true
+                val field = entry.value.apply { isAccessible = true }
 
-                if (field.isAnnotationPresent(ReadOnly::class.java)) continue@loop
+                if (field.getAnnotation(Attribute::class.java)?.readOnly == true
+                    || field.isAnnotationPresent(ReadOnly::class.java)) {
+
+                    continue@loop
+                }
 
                 when {
                     field.get(ref) == null && !Timestamp::class.java.isAssignableFrom(field.type) -> {

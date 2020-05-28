@@ -2,4 +2,8 @@ package br.com.robsonldo.library.annotations
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FIELD)
-annotation class Attribute(val value: String, val save: Boolean = true)
+annotation class Attribute(
+    val value: String,
+    val readOnly: Boolean = false,
+    val canBeNull:Boolean = true
+)
