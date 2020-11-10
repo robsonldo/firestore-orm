@@ -63,15 +63,17 @@ class MainActivity : AppCompatActivity() {
 
         /* specifically updating an attribute */
         personA.lastAddress["2"]?.let { it["22"]?.apply { number = 13 } }
-        personA.updateFieldValue("lastAddress.2.22.number", onCompletion = object : OnCompletion<Person> {
-            override fun onSuccess(obj: Person) {
-                Log.i(TAG, "updated object id: ${obj.id}")
-            }
+        personA.updateFieldValue(
+            "lastAddress.2.22.number",
+            onCompletion = object : OnCompletion<Person> {
+                override fun onSuccess(obj: Person) {
+                    Log.i(TAG, "updated object id: ${obj.id}")
+                }
 
-            override fun onError(e: Exception) {
-                Log.e(TAG, e.message ?: "Error")
-            }
-        })
+                override fun onError(e: Exception) {
+                    Log.e(TAG, e.message ?: "Error")
+                }
+            })
 
 
         /* Fetching all objects in the collection */

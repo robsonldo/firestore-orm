@@ -24,7 +24,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     var id: String = ""
         get() {
-            field = if (field != "") field else generateKey();
+            field = if (field != "") field else generateKey()
             return field
         }
 
@@ -60,7 +60,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     @Suppress("UNCHECKED_CAST")
     open fun get(onCompletion: OnCompletion<T>) {
-        if (!validate { e -> onCompletion.onError(e) }) return
+        if (!validate { e -> onCompletion.onError(e) }) { return }
 
         getCollectionReference()
             .document(id)
@@ -82,10 +82,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         val registration: ListenerRegistration = getCollectionReference()
             .document(id)
             .addSnapshotListener { snap, e ->
-                if (e != null) {
-                    onListenerGet.onError(e)
-                    return@addSnapshotListener
-                }
+                if (e != null) { return@addSnapshotListener onListenerGet.onError(e) }
 
                 if (snap != null && snap.exists()) {
                     try {
@@ -101,11 +98,14 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         onListenerRegistrations.add(registration)
     }
 
-    open fun all(onCompletionAll: OnCompletionAll<T>) = findAllQuery(getCollectionReference(), onCompletionAll)
+    open fun all(onCompletionAll: OnCompletionAll<T>) {
+        findAllQuery(getCollectionReference(), onCompletionAll)
+    }
 
     @Suppress("UNCHECKED_CAST")
     open fun findAllQuery(query: Query, onCompletionAll: OnCompletionAll<T>) {
-        if (!validate(false) { e -> onCompletionAll.onError(e) }) return
+        if (!validate(false) { e -> onCompletionAll.onError(e) }) { return }
+
         val list: MutableList<T> = mutableListOf()
 
         query
@@ -117,10 +117,11 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                     else -> {
                         for (snap in task.result!!) {
                             try {
-                                list.add(DataParse.documentSnapshotInObject(
-                                    snap,
-                                    this::class.java.newInstance() as T)
-                                        .apply { managerObjectByCaller(this@FireStoreORM) }
+                                list.add(
+                                    DataParse.documentSnapshotInObject(
+                                        snap,
+                                        this::class.java.newInstance() as T
+                                    ).apply { managerObjectByCaller(this@FireStoreORM) }
                                 )
                             } catch (e: Exception) {
                                 return@addOnCompleteListener onCompletionAll.onError(e)
@@ -133,11 +134,13 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
             }
     }
 
-    open fun onAll(onListenerAll: OnListenerAll<T>) = onFindAllQuery(getCollectionReference(), onListenerAll)
+    open fun onAll(onListenerAll: OnListenerAll<T>) {
+        onFindAllQuery(getCollectionReference(), onListenerAll)
+    }
 
     @Suppress("UNCHECKED_CAST")
     open fun onFindAllQuery(query: Query, onListenerAll: OnListenerAll<T>) {
-        if (!validate { e -> onListenerAll.onError(e) }) return
+        if (!validate { e -> onListenerAll.onError(e) }) { return }
 
         var isInit = true
         val objects: MutableList<T> = mutableListOf()
@@ -159,10 +162,11 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                         if (dc.type != DocumentChange.Type.ADDED) continue@loop
 
                         try {
-                            objects.add(DataParse.documentSnapshotInObject(
-                                dc.document,
-                                this::class.java.newInstance() as T)
-                                    .apply { managerObjectByCaller(this@FireStoreORM) }
+                            objects.add(
+                                DataParse.documentSnapshotInObject(
+                                    dc.document,
+                                    this::class.java.newInstance() as T
+                                ).apply { managerObjectByCaller(this@FireStoreORM) }
                             )
 
                         } catch (e: Exception) {
@@ -171,8 +175,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                         }
                     }
 
-                    onListenerAll.onInit(objects)
-                    return@addSnapshotListener
+                    return@addSnapshotListener onListenerAll.onInit(objects)
                 }
 
                 loop@ for (dc in snap.documentChanges) {
@@ -204,7 +207,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     private fun prepareToSave(merge: Boolean = true, onCompletion: OnCompletion<T>? = null) {
-        if (!validate { e -> onCompletion?.onError(e) }) return
+        if (!validate { e -> onCompletion?.onError(e) }) { return }
 
         try {
             val df = getCollectionReference().document(id)
@@ -216,8 +219,12 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     @Throws(Exception::class)
     @Suppress("UNCHECKED_CAST")
-    private fun save(map: MutableMap<String, Any?>, df: DocumentReference, merge: Boolean = true,
-                     onCompletion: OnCompletion<T>?) {
+    private fun save(
+        map: MutableMap<String, Any?>,
+        df: DocumentReference,
+        merge: Boolean = true,
+        onCompletion: OnCompletion<T>? = null
+    ) {
 
         val onSuccessListener = OnSuccessListener<Void> { onCompletion?.onSuccess(this as T) }
         val onFailureListener = OnFailureListener { e -> onCompletion?.onError(e) }
@@ -237,8 +244,8 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun updateFieldValue(vararg fields: String, onCompletion: OnCompletion<T>?) {
-        if (!validateUpdateFields(*fields) { e -> onCompletion?.onError(e) }) return
+    fun updateFieldValue(vararg fields: String, onCompletion: OnCompletion<T>? = null) {
+        if (!validateUpdateFields(*fields) { e -> onCompletion?.onError(e) }) { return }
 
         try {
             val fieldsAndValues: MutableList<Any?> = mutableListOf()
@@ -261,43 +268,50 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         }
     }
 
-    private fun generateKey(): String {
-        var id: String? = null
-        fieldId?.let { it.isAccessible = true; id = it.get(this) as String? }
-        id = id ?: getCollectionReference().document().id
-        return id as String
+    @Suppress("UNCHECKED_CAST")
+    open fun delete(onCompletion: OnCompletion<T>? = null) {
+        if (!validate { e -> onCompletion?.onError(e) }) { return }
+
+        getCollectionReference()
+            .document(id)
+            .delete()
+            .addOnSuccessListener { onCompletion?.onSuccess(this as T) }
+            .addOnFailureListener { e -> onCompletion?.onError(e) }
     }
 
-    private fun validate(verifyId: Boolean = true, exception: (e: Exception) -> Unit): Boolean {
-        return when {
-            getACollection() == null -> {
-                exception(FireStoreORMException("${getClassName()}: Collection not defined"))
-                false
-            }
-            path.trim() == "" -> {
-                exception(FireStoreORMException("${getClassName()}: Collection name is null or empty"))
-                false
-            }
-            verifyId && id == "" -> {
-                exception(FireStoreORMException("${getClassName()}: Id is null"))
-                false
-            }
-            else -> true
+    private fun generateKey(): String {
+        return fieldId?.let { field ->
+            field.isAccessible = true
+            field.get(this) as String?
+        } ?: getCollectionReference().document().id
+    }
+
+    private fun validate(verifyId: Boolean = true, exception: (e: Exception) -> Unit) = when {
+        getACollection() == null -> {
+            exception(FireStoreORMException("${getClassName()}: Collection not defined"))
+            false
         }
+        path.trim() == "" -> {
+            exception(FireStoreORMException("${getClassName()}: Collection name is null or empty"))
+            false
+        }
+        verifyId && id == "" -> {
+            exception(FireStoreORMException("${getClassName()}: Id is null"))
+            false
+        }
+        else -> true
     }
 
     private fun validateUpdateFields(
         vararg fields: String,
         exception: (e: Exception) -> Unit
-    ): Boolean {
-        return when {
-            !validate(true) { e -> exception(e) } -> false
-            fields.isEmpty() -> {
-                exception(FireStoreORMException("${getClassName()}: Fields is empty"))
-                false
-            }
-            else -> true
+    ) = when {
+        !validate(true) { e -> exception(e) } -> false
+        fields.isEmpty() -> {
+            exception(FireStoreORMException("${getClassName()}: Fields is empty"))
+            false
         }
+        else -> true
     }
 
     fun getClassName() = this::class.java.name
@@ -333,15 +347,17 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                 fieldNotValid(field) -> continue@loop
                 field.isAnnotationPresent(Attribute::class.java) -> {
                     val attribute: Attribute? = field.getAnnotation(Attribute::class.java)
-                    if (attribute != null) attributes[attribute.value] = field
+                    if (attribute != null) { attributes[attribute.value] = field }
                     verifyAnnotationId(field)
                 }
                 field.isAnnotationPresent(ValueHashMap::class.java) -> valueInHashMap = field
                 field.isAnnotationPresent(AttributeCollection::class.java)
                         && FireStoreORM::class.java.isAssignableFrom(field.type) -> {
 
-                    attributeCollections.add(Pair(field,
-                        field.getAnnotation(AttributeCollection::class.java)))
+                    attributeCollections.add(Pair(
+                        field,
+                        field.getAnnotation(AttributeCollection::class.java)
+                    ))
                 }
                 else -> {
                     attributes[field.name] = field
@@ -351,7 +367,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         }
 
         val superClazz = clazz.superclass
-        if (superClazz != clazz) superClazz?.isAssignableFrom(FireStoreORM::class.java)
+        if (superClazz != clazz) { superClazz?.isAssignableFrom(FireStoreORM::class.java) }
     }
 
     private fun verifyAnnotationId(field: Field) {
@@ -363,12 +379,16 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     }
 
     private fun fieldNotValid(field: Field): Boolean {
-        return field.isAnnotationPresent(Ignore::class.java) || Modifier.isTransient(field.modifiers)
+        return field.isAnnotationPresent(Ignore::class.java)
+                || Modifier.isTransient(field.modifiers)
                 || Modifier.isStatic(field.modifiers) || Modifier.isFinal(field.modifiers)
     }
 
     fun removeAllListenerRegistrations() {
-        for (registration in onListenerRegistrations) removeListenerRegistration(registration)
+        for (registration in onListenerRegistrations) {
+            removeListenerRegistration(registration)
+        }
+
         onListenerRegistrations.clear()
     }
 
@@ -400,7 +420,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         })
     }
 
-    open fun all(all: All<T>, error: Error) = findAllQuery(getCollectionReference(), all, error)
+    open fun all(all: All<T>, error: Error) {
+        findAllQuery(getCollectionReference(), all, error)
+    }
 
     open fun findAllQuery(query: Query, all: All<T>, error: Error) {
         findAllQuery(query, object : OnCompletionAll<T> {

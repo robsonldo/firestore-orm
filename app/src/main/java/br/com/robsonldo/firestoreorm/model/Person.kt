@@ -33,7 +33,7 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("birth")
     var birth: Timestamp? = null
 
-    @Attribute("currentAddress")
+    @Attribute("currentAddress", ifNullDelete = true)
     var myAddress: Address? = null
 
     @TimestampAction(create = true)
