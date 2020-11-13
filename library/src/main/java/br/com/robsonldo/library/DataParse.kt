@@ -361,16 +361,21 @@ class DataParse private constructor() {
         fun manageDefinedTypes(clazz: Class<*>?, any: Any?): Any? = when {
             clazz == null -> null
             Timestamp::class.java.isAssignableFrom(clazz) -> {
-                if (any is Timestamp) { any }
-                else if (any is MutableMap<*, *>) {
-                    val map = any as MutableMap<String, Any?>
-                    val second: Long? = Utils.convertInLong(map["_second"])
-                    val nanoSeconds: Int? = Utils.convertInInt(map["_nanoseconds"])
+                when (any) {
+                    is Timestamp -> any
+                    is Long -> Timestamp(Date(any))
+                    is Int -> Timestamp(Date(any.toLong()))
+                    is MutableMap<*, *> -> {
+                        val map = any as MutableMap<String, Any?>
+                        val second: Long? = Utils.convertInLong(map["_second"])
+                        val nanoSeconds: Int? = Utils.convertInInt(map["_nanoseconds"])
 
-                    if (second != null && nanoSeconds != null) {
-                        Timestamp(second, nanoSeconds)
-                    } else { null }
-                } else { null }
+                        if (second != null && nanoSeconds != null) {
+                            Timestamp(second, nanoSeconds)
+                        } else { null }
+                    }
+                    else -> null
+                }
             }
             (clazz == Long::class.java || clazz == Long::class.javaObjectType)
                     && any is Number -> {
