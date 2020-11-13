@@ -363,8 +363,8 @@ class DataParse private constructor() {
             Timestamp::class.java.isAssignableFrom(clazz) -> {
                 when (any) {
                     is Timestamp -> any
-                    is Long -> Timestamp(Date(any))
-                    is Int -> Timestamp(Date(any.toLong()))
+                    is Long -> Timestamp(Date(any * 1000L))
+                    is Int -> Timestamp(Date(any.toLong() * 1000L))
                     is MutableMap<*, *> -> {
                         val map = any as MutableMap<String, Any?>
                         val second: Long? = Utils.convertInLong(map["_second"])
