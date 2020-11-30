@@ -12,6 +12,17 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.firestore.*
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
+import kotlin.collections.HashMap
+import kotlin.collections.Map
+import kotlin.collections.MutableCollection
+import kotlin.collections.MutableList
+import kotlin.collections.MutableMap
+import kotlin.collections.hashMapOf
+import kotlin.collections.isEmpty
+import kotlin.collections.isNotEmpty
+import kotlin.collections.mutableListOf
+import kotlin.collections.set
+import kotlin.collections.toTypedArray
 
 typealias Get<T> = (obj: T) -> Unit
 typealias OnGet<T> = (obj: T?) -> Unit
@@ -45,12 +56,15 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
 
     @Transient private val database: FirebaseFirestore = FirebaseFirestore.getInstance()
     @Transient val collection: Collection? = getACollection()
+    @Transient val documentSnapshotSave: DocumentSnapshotSave? = getADocumentSnapshotSave()
     @Transient val typeSource: Source = getATypeSource()
     @Transient var valueInHashMap: Field? = null
     @Transient var fieldId: Field? = null
     @Transient var attributes: HashMap<String, Field> = hashMapOf()
     @Transient private var attributeCollections: MutableCollection<Pair<Field, AttributeCollection>> = mutableListOf()
     @Transient private val onListenerRegistrations: MutableCollection<ListenerRegistration> = mutableListOf()
+
+    @Transient var documentSnapshot: DocumentSnapshot? = null
 
     init {
         initPath()
@@ -317,6 +331,10 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
     fun getClassName() = this::class.java.name
     fun getCollectionReference(): CollectionReference = database.collection(path)
     fun getACollection(): Collection? = this::class.java.getAnnotation(Collection::class.java)
+
+    fun getADocumentSnapshotSave(): DocumentSnapshotSave? {
+        return this::class.java.getAnnotation(DocumentSnapshotSave::class.java)
+    }
 
     fun getATypeSource(): Source {
         return this::class.java.getAnnotation(TypeSource::class.java)?.value ?: Source.DEFAULT

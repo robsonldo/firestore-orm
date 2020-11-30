@@ -8,6 +8,7 @@ import com.google.firebase.firestore.Source
 
 @Persisted(false)
 @TypeSource(Source.SERVER)
+@DocumentSnapshotSave
 @Collection("persons")
 class Person() : FireStoreORM<Person>() {
 

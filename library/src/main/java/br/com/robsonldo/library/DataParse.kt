@@ -18,13 +18,18 @@ class DataParse private constructor() {
         @JvmStatic
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
-        fun <T: FireStoreORM<*>> documentSnapshotInObject(document: DocumentSnapshot, ref: T): T {
+        fun <T: FireStoreORM<*>> documentSnapshotInObject(
+            document: DocumentSnapshot,
+            ref: T
+        ): T {
             ref.id = document.id
 
             ref.fieldId?.let {
                 it.isAccessible = true
                 it.set(ref, ref.id)
             }
+
+            if (ref.documentSnapshotSave != null) { ref.documentSnapshot = document }
 
             return when (val data = document.data) {
                 null -> ref
