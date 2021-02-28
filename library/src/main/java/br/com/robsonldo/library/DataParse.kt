@@ -373,6 +373,8 @@ class DataParse private constructor() {
                     is MutableMap<*, *> -> {
                         val map = any as MutableMap<String, Any?>
                         val second: Long? = Utils.convertInLong(map["_second"])
+                            ?: Utils.convertInLong(map["_seconds"])
+
                         val nanoSeconds: Int? = Utils.convertInInt(map["_nanoseconds"])
 
                         if (second != null && nanoSeconds != null) {
