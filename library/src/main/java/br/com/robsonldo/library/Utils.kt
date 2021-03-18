@@ -20,7 +20,9 @@ class Utils private constructor() {
 
             var cPt = pt
             return when(cPt.actualTypeArguments[position]) {
-                is Class<*> -> valueInPair(cPt, cPt.actualTypeArguments[position] as Class<*>)
+                is Class<*> ->  {
+                    valueInPair(cPt, cPt.actualTypeArguments[position] as Class<*>)
+                }
                 is ParameterizedType -> {
                     cPt = (cPt.actualTypeArguments[position] as ParameterizedType)
                     valueInPair(cPt, cPt.rawType as Class<*>)

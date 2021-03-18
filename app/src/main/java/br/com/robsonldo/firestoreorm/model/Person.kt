@@ -34,6 +34,27 @@ class Person() : FireStoreORM<Person>() {
     @Attribute("birth")
     var birth: Timestamp? = null
 
+    @Attribute("car1Id")
+    var carOneId: String? = null
+
+    @Attribute("car2Id")
+    var carTwoId: String? = null
+
+    @AttributeReference(referenceName = "carOne", attributeWithId = "car1Id")
+    var carOne: Car? = null
+
+    @AttributeReference(referenceName = "carTwo", attributeWithId = "car2Id")
+    var carTwo: Car? = null
+
+    @AttributeReference(
+        collection = "persons",
+        referenceName = "cars",
+        attributeWithId = "",
+        path = "/%s/cars",
+        paramsAttributes = ["id"]
+    )
+    var cars: MutableList<Car> = mutableListOf()
+
     @Attribute("currentAddress", ifNullDelete = true)
     var myAddress: Address? = null
 

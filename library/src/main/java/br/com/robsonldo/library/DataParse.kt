@@ -24,7 +24,7 @@ class DataParse private constructor() {
         ): T {
             ref.id = document.id
 
-            ref.fieldId?.let {
+            ref.fieldId?.also {
                 it.isAccessible = true
                 it.set(ref, ref.id)
             }
@@ -124,7 +124,7 @@ class DataParse private constructor() {
 
             val map: MutableMap<String, Any?> = mutableMapOf()
 
-            ref.fieldId?.let {
+            ref.fieldId?.also {
                 it.isAccessible = true
                 it.set(ref, ref.id)
             }
@@ -147,12 +147,12 @@ class DataParse private constructor() {
                             }
                     }
                     Collection::class.java.isAssignableFrom(field.type) -> {
-                        field.get(ref)?.let {
+                        field.get(ref)?.also {
                             map[entry.key] = collectionToMap(it as MutableCollection<Any?>)
                         }
                     }
                     MutableMap::class.java.isAssignableFrom(field.type) -> {
-                        field.get(ref)?.let {
+                        field.get(ref)?.also {
                             map[entry.key] = mapToMap(it as MutableMap<String, Any?>)
                         }
                     }
@@ -162,7 +162,7 @@ class DataParse private constructor() {
                     Timestamp::class.java.isAssignableFrom(field.type) -> {
                         val ta = field.getAnnotation(TimestampAction::class.java)
                         if (ta == null) {
-                            field.get(ref)?.let { map[entry.key] = field.get(ref) }
+                            field.get(ref)?.also { map[entry.key] = field.get(ref) }
                         } else if ((ta.create && field.get(ref) == null) || ta.update) {
                             map[entry.key] = FieldValue.serverTimestamp()
                             field.set(ref, Timestamp(Date()))
@@ -278,11 +278,21 @@ class DataParse private constructor() {
             collectionClazz: Class<MutableCollection<Any?>>
         ): E {
             val cCollection = when (collectionClazz) {
-                MutableCollection::class.java, List::class.java -> mutableListOf<Any?>()
-                Set::class.java -> mutableSetOf<Any?>()
-                SortedSet::class.java, NavigableSet::class.java -> TreeSet<Any?>()
-                Deque::class.java, Queue::class.java -> ArrayDeque<Any?>()
-                else -> collectionClazz.newInstance() as E
+                MutableCollection::class.java, List::class.java -> {
+                    mutableListOf<Any?>()
+                }
+                Set::class.java -> {
+                    mutableSetOf<Any?>()
+                }
+                SortedSet::class.java, NavigableSet::class.java -> {
+                    TreeSet<Any?>()
+                }
+                Deque::class.java, Queue::class.java -> {
+                    ArrayDeque<Any?>()
+                }
+                else -> {
+                    collectionClazz.newInstance() as E
+                }
             }
 
             val ptAndClazz = Utils.getParameterizedTypeArgumentPosition(pt, 0)
@@ -290,7 +300,7 @@ class DataParse private constructor() {
             val clazz: Class<*> = ptAndClazz?.second ?: Class::class.java
 
             for (i in collection) {
-                i?.let { cCollection.add(valueFromMap(it, clazz, cPt)) }
+                i?.also { cCollection.add(valueFromMap(it, clazz, cPt)) }
             }
 
             return cCollection as E

@@ -14,13 +14,26 @@ class MainActivity : AppCompatActivity() {
         const val TAG = "MainActivity"
     }
 
+    private val person by lazy { Person() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val personA = Person()
+        //Fetching all objects in the collection
+        person.all(object : OnCompletionAll<Person> {
+            override fun onSuccess(objs: MutableList<Person>) {
+                Log.i(TAG, "number of people: ${objs.size}")
+            }
 
-        personA.apply {
+            override fun onError(e: Exception) {
+                Log.e(TAG, e.message ?: "Error")
+            }
+        })
+    }
+
+    private fun savePerson() {
+        person.apply {
             name = "Will"
             lastName = "James"
             age = 18
@@ -47,11 +60,12 @@ class MainActivity : AppCompatActivity() {
                 mutableMapOf(
                     "Home" to (myAddress ?: Address()),
                     "Work" to Address("Street W", "District W", 5)
-            ))
+                )
+            )
         }
 
         /* saving the entire object */
-        personA.save(onCompletion = object : OnCompletion<Person> {
+        person.save(onCompletion = object : OnCompletion<Person> {
             override fun onSuccess(obj: Person) {
                 Log.i(TAG, "saved object id: ${obj.id}")
             }
@@ -60,10 +74,13 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, e.message ?: "Error")
             }
         })
+    }
 
+    private fun updatePerson() {
         /* specifically updating an attribute */
-        personA.lastAddress["2"]?.let { it["22"]?.apply { number = 13 } }
-        personA.updateFieldValue(
+        person.lastAddress["2"]?.also { it["22"]?.apply { number = 13 } }
+
+        person.updateFieldValue(
             "lastAddress.2.22.number",
             onCompletion = object : OnCompletion<Person> {
                 override fun onSuccess(obj: Person) {
@@ -74,17 +91,5 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, e.message ?: "Error")
                 }
             })
-
-
-        /* Fetching all objects in the collection */
-        Person().all(object : OnCompletionAll<Person> {
-            override fun onSuccess(objs: MutableList<Person>) {
-                Log.i(TAG, "number of people: ${objs.size}")
-            }
-
-            override fun onError(e: Exception) {
-                Log.e(TAG, e.message ?: "Error")
-            }
-        })
     }
 }
