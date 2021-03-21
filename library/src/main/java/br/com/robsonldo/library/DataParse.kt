@@ -160,12 +160,8 @@ class DataParse private constructor() {
                         map[entry.key] = toMap(field.get(ref) as FireStoreORM<*>)
                     }
                     Timestamp::class.java.isAssignableFrom(field.type) -> {
-                        val ta = field.getAnnotation(TimestampAction::class.java)
-                        if (ta == null) {
-                            field.get(ref)?.also { map[entry.key] = field.get(ref) }
-                        } else if ((ta.create && field.get(ref) == null) || ta.update) {
-                            map[entry.key] = FieldValue.serverTimestamp()
-                            field.set(ref, Timestamp(Date()))
+                        manageTimestamp(ref, field).also {
+                            map[entry.key] = it.second
                         }
                     }
                     else -> map[entry.key] = field.get(ref)
@@ -206,9 +202,16 @@ class DataParse private constructor() {
                 aField.isAccessible = true
 
                 val aAny = aField.get(ref) ?: return Pair(null, fields)
-                return if (aAny is FireStoreORM<*> && fields.size > 1) {
-                    accessingFireStoreORM(aAny, aFields)
-                } else { Pair(aAny, aFields) }
+                return when {
+                    aAny is FireStoreORM<*> && fields.size > 1 -> {
+                        accessingFireStoreORM(aAny, aFields)
+                    }
+                    aAny is Timestamp -> {
+                        val (_, value) = manageTimestamp(ref, aField)
+                        Pair(value, aFields)
+                    }
+                    else -> { Pair(aAny, aFields) }
+                }
             }
 
             var fields = fieldName.split(".")
@@ -236,6 +239,11 @@ class DataParse private constructor() {
                         val pair = accessingFireStoreORM(any, fields)
                         fields = pair.second
                         any = pair.first
+                    }
+                    is Timestamp -> {
+                        val (valid, value) = manageTimestamp(ref, field)
+                        if (valid) { any = value }
+                        break@loop
                     }
                     else -> { break@loop }
                 }
@@ -330,6 +338,20 @@ class DataParse private constructor() {
             }
 
             return cCollection
+        }
+
+        @JvmStatic
+        fun <T: FireStoreORM<*>> manageTimestamp(ref: T, field: Field): Pair<Boolean, Any?> {
+            if (!Timestamp::class.java.isAssignableFrom(field.type)) {
+                return Pair(false, null)
+            }
+
+            val ta = field.getAnnotation(TimestampAction::class.java)
+
+            return if (ta != null && ((ta.create && field.get(ref) == null) || ta.update)) {
+                field.set(ref, Timestamp.now())
+                Pair(true, FieldValue.serverTimestamp())
+            } else { Pair(true, field.get(ref)) }
         }
 
         @JvmStatic
