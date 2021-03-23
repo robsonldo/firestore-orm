@@ -33,63 +33,63 @@ class Utils private constructor() {
 
                     valueInPair(cPt, cPt.rawType as Class<*>)
                 }
-                else -> null
+                else -> { null }
             }
         }
 
         @JvmStatic
         fun convertInInt(obj: Any?): Int? {
             return when {
-                obj == null -> null
-                !isPrimitive(obj) -> null
-                obj is Int -> obj
-                obj is Long -> obj.toInt()
-                obj is Double -> obj.toInt()
-                obj is Float -> obj.toInt()
-                obj is String && obj.isNumber() -> obj.toInt()
-                else -> null
+                obj == null -> { null }
+                !isPrimitive(obj) -> { null }
+                obj is Int -> { obj }
+                obj is Long -> { obj.toInt() }
+                obj is Double -> { obj.toInt() }
+                obj is Float -> { obj.toInt() }
+                obj is String && obj.isNumber() -> { obj.toInt() }
+                else -> { null }
             }
         }
 
         @JvmStatic
         fun convertInLong(obj: Any?): Long? {
             return when {
-                obj == null -> null
-                !isPrimitive(obj) -> null
-                obj is Long -> obj
-                obj is Int -> obj.toLong()
-                obj is Double -> obj.toLong()
-                obj is Float -> obj.toLong()
-                obj is String && obj.isNumber() -> obj.toLong()
-                else -> null
+                obj == null -> { null }
+                !isPrimitive(obj) -> { null }
+                obj is Long -> { obj }
+                obj is Int -> { obj.toLong() }
+                obj is Double -> { obj.toLong() }
+                obj is Float -> { obj.toLong() }
+                obj is String && obj.isNumber() -> { obj.toLong() }
+                else -> { null }
             }
         }
 
         @JvmStatic
         fun convertInDouble(obj: Any?): Double? {
             return when {
-                obj == null -> null
-                !isPrimitive(obj) -> null
-                obj is Double -> obj
-                obj is Float -> obj.toDouble()
-                obj is Long -> obj.toDouble()
-                obj is Int -> obj.toDouble()
-                obj is String && obj.isNumber() -> obj.toDouble()
-                else -> null
+                obj == null -> { null }
+                !isPrimitive(obj) -> { null }
+                obj is Double -> { obj }
+                obj is Float -> { obj.toDouble() }
+                obj is Long -> { obj.toDouble() }
+                obj is Int -> { obj.toDouble() }
+                obj is String && obj.isNumber() -> { obj.toDouble() }
+                else -> { null }
             }
         }
 
         @JvmStatic
         fun convertInFloat(obj: Any?): Float? {
             return when {
-                obj == null -> null
-                !isPrimitive(obj) -> null
-                obj is Float -> obj
-                obj is Double -> obj.toFloat()
-                obj is Long -> obj.toFloat()
-                obj is Int -> obj.toFloat()
-                obj is String && obj.isNumber() -> obj.toFloat()
-                else -> null
+                obj == null -> { null }
+                !isPrimitive(obj) -> { null }
+                obj is Float -> { obj }
+                obj is Double -> { obj.toFloat() }
+                obj is Long -> { obj.toFloat() }
+                obj is Int -> { obj.toFloat() }
+                obj is String && obj.isNumber() -> { obj.toFloat() }
+                else -> { null }
             }
         }
 

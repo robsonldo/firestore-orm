@@ -32,8 +32,8 @@ class DataParse private constructor() {
             if (ref.documentSnapshotSave != null) { ref.documentSnapshot = document }
 
             return when (val data = document.data) {
-                null -> ref
-                else -> fromMap(data, null, ref)
+                null -> { ref }
+                else -> { fromMap(data, null, ref) }
             }
         }
 
@@ -48,7 +48,7 @@ class DataParse private constructor() {
             ref.wasFound = true
 
             if (ref.collection?.valueInObject != true) {
-                ref.valueInHashMap?.let {
+                ref.valueInHashMap?.also {
                     it.isAccessible = true
                     it.set(ref, data)
                 }
@@ -104,7 +104,7 @@ class DataParse private constructor() {
                             fromMap(value as MutableMap<String, Any?>, typeClass, fireStoreORM)
                         )
                     }
-                    else -> field.set(ref, manageDefinedTypes(field.type, value))
+                    else -> { field.set(ref, manageDefinedTypes(field.type, value)) }
                 }
             }
 
@@ -142,8 +142,8 @@ class DataParse private constructor() {
                     field.get(ref) == null && !Timestamp::class.java.isAssignableFrom(field.type) -> {
                         map[entry.key] =
                             when (field.getAnnotation(Attribute::class.java)?.ifNullDelete) {
-                                true -> FieldValue.delete()
-                                else -> null
+                                true -> { FieldValue.delete() }
+                                else -> { null }
                             }
                     }
                     Collection::class.java.isAssignableFrom(field.type) -> {
@@ -164,7 +164,7 @@ class DataParse private constructor() {
                             map[entry.key] = it.second
                         }
                     }
-                    else -> map[entry.key] = field.get(ref)
+                    else -> { map[entry.key] = field.get(ref) }
                 }
             }
 
@@ -271,7 +271,7 @@ class DataParse private constructor() {
             val clazz: Class<*> = ptAndClazz?.second ?: Class::class.java
 
             for (entry in map) {
-                entry.value?.let { cMap[entry.key] = valueFromMap(it, clazz, cPt) }
+                entry.value?.also { cMap[entry.key] = valueFromMap(it, clazz, cPt) }
             }
 
             return cMap as E
@@ -358,10 +358,10 @@ class DataParse private constructor() {
         @Throws(Exception::class)
         @Suppress("UNCHECKED_CAST")
         fun valueToMap(any: Any?): Any? = when (any) {
-            is FireStoreORM<*> -> toMap(any)
-            is MutableMap<*, *> -> mapToMap(any as MutableMap<String, Any?>)
-            is MutableCollection<*> -> collectionToMap(any as MutableCollection<Any?>)
-            else -> any
+            is FireStoreORM<*> -> { toMap(any) }
+            is MutableMap<*, *> -> { mapToMap(any as MutableMap<String, Any?>) }
+            is MutableCollection<*> ->  { collectionToMap(any as MutableCollection<Any?>) }
+            else ->  { any }
         }
 
         @JvmStatic
@@ -389,7 +389,7 @@ class DataParse private constructor() {
                     clazz as Class<MutableCollection<Any?>>
                 )
             }
-            else -> manageDefinedTypes(clazz, any)
+            else -> { manageDefinedTypes(clazz, any) }
         }
 
         @JvmStatic
@@ -399,9 +399,9 @@ class DataParse private constructor() {
             clazz == null -> null
             Timestamp::class.java.isAssignableFrom(clazz) -> {
                 when (any) {
-                    is Timestamp -> any
-                    is Long -> Timestamp(Date(any * 1000L))
-                    is Int -> Timestamp(Date(any.toLong() * 1000L))
+                    is Timestamp -> { any }
+                    is Long -> { Timestamp(Date(any * 1000L)) }
+                    is Int -> { Timestamp(Date(any.toLong() * 1000L)) }
                     is MutableMap<*, *> -> {
                         val map = any as MutableMap<String, Any?>
                         val second: Long? = Utils.convertInLong(map["_second"])
@@ -413,7 +413,7 @@ class DataParse private constructor() {
                             Timestamp(second, nanoSeconds)
                         } else { null }
                     }
-                    else -> null
+                    else -> { null }
                 }
             }
             (clazz == Long::class.java || clazz == Long::class.javaObjectType)
@@ -440,7 +440,7 @@ class DataParse private constructor() {
                 if (any !is Boolean) { false }
                 else  { any }
             }
-            else -> any
+            else -> { any }
         }
     }
 }

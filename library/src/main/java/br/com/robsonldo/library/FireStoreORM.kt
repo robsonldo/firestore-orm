@@ -112,9 +112,7 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
             val registration: ListenerRegistration = getCollectionReference()
                 .document(id)
                 .addSnapshotListener { snap, e ->
-                    if (e != null) {
-                        return@addSnapshotListener onListenerGet.onError(e)
-                    }
+                    if (e != null) { return@addSnapshotListener onListenerGet.onError(e) }
 
                     if (snap != null && snap.exists()) {
                         try {
@@ -203,13 +201,13 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                     return@addSnapshotListener removeListenerRegistration(registration)
                 }
 
-                if (snap == null) return@addSnapshotListener
+                if (snap == null) { return@addSnapshotListener }
 
                 if (isInit) {
                     isInit = false
 
                     loop@ for (dc in snap.documentChanges) {
-                        if (dc.type != DocumentChange.Type.ADDED) continue@loop
+                        if (dc.type != DocumentChange.Type.ADDED) { continue@loop }
 
                         try {
                             objects.add(
@@ -242,9 +240,9 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                     }
 
                     when (dc.type) {
-                        DocumentChange.Type.ADDED -> onListenerAll.onAdded(t)
-                        DocumentChange.Type.MODIFIED -> onListenerAll.onModified(t)
-                        DocumentChange.Type.REMOVED -> onListenerAll.onRemoved(t)
+                        DocumentChange.Type.ADDED -> { onListenerAll.onAdded(t) }
+                        DocumentChange.Type.MODIFIED -> { onListenerAll.onModified(t) }
+                        DocumentChange.Type.REMOVED -> { onListenerAll.onRemoved(t) }
                     }
                 }
             }
@@ -257,7 +255,6 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         prepareToSave(merge, onCompletion)
     }
 
-    @JvmOverloads
     private fun prepareToSave(merge: Boolean = true, onCompletion: OnCompletion<T>? = null) {
         if (!validate { e -> onCompletion?.onError(e) }) { return }
 
@@ -269,7 +266,6 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
         }
     }
 
-    @JvmOverloads
     @Throws(Exception::class)
     @Suppress("UNCHECKED_CAST")
     private fun save(
@@ -293,6 +289,51 @@ abstract class FireStoreORM<T : FireStoreORM<T>> {
                 .set(map)
                 .addOnSuccessListener(onSuccessListener)
                 .addOnFailureListener(onFailureListener)
+        }
+    }
+
+    @JvmOverloads
+    @Suppress("UNCHECKED_CAST")
+    fun updateIncrement(
+        vararg fieldsAndIncrements: Pair<String, Long>,
+        onCompletion: OnCompletion<T>? = null
+    ) {
+        if (!validateUpdateFields(
+                *fieldsAndIncrements.filter { it.second != 0L }.map { it.first }.toTypedArray()
+            ) { e -> onCompletion?.onError(e) }) {
+                return
+        }
+
+        fun valueInFieldOrFieldIncrement(field: String, inc: Long): Any? {
+            return when (inc) {
+                0L -> { DataParse.getValueInField(this, field) }
+                else -> { FieldValue.increment(inc) }
+            }
+        }
+
+        try {
+            val fieldsAndValues: MutableList<Any?> = mutableListOf()
+            val df = getCollectionReference().document(id)
+
+            val field = fieldsAndIncrements[0].first
+            val value = valueInFieldOrFieldIncrement(field, fieldsAndIncrements[0].second)
+
+            for (i in 1 until fieldsAndIncrements.size) {
+                fieldsAndValues.add(fieldsAndIncrements[i].first)
+                fieldsAndValues.add(
+                    valueInFieldOrFieldIncrement(
+                        fieldsAndIncrements[i].first,
+                        fieldsAndIncrements[i].second
+                    )
+                )
+            }
+
+            df.update(field, value, *fieldsAndValues.toTypedArray())
+                .addOnSuccessListener { onCompletion?.onSuccess(this as T) }
+                .addOnFailureListener { e -> onCompletion?.onError(e) }
+
+        } catch (e: Exception) {
+            onCompletion?.onError(e)
         }
     }
 

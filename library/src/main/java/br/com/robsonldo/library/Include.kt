@@ -128,8 +128,8 @@ class Include private constructor() {
                 Log.e(TAG, e.message ?: "Error path.")
 
                 return when (validateValuesInAnnotation) {
-                    true -> onInclude.onError(e)
-                    else -> onInclude.onSuccess()
+                    true -> { onInclude.onError(e) }
+                    else -> { onInclude.onSuccess() }
                 }
             }
 
@@ -176,8 +176,8 @@ class Include private constructor() {
                 Log.e(TAG, e.message ?: "Id error")
 
                 return when (validateValuesInAnnotation) {
-                    true -> onInclude.onError(e)
-                    else -> onInclude.onSuccess()
+                    true -> { onInclude.onError(e) }
+                    else -> { onInclude.onSuccess() }
                 }
             }
 
@@ -218,8 +218,8 @@ class Include private constructor() {
                 Log.e(TAG, e.message ?: "Id error")
 
                 return when (validateValuesInAnnotation) {
-                    true -> onInclude.onError(e)
-                    else -> onInclude.onSuccess()
+                    true -> { onInclude.onError(e) }
+                    else -> { onInclude.onSuccess() }
                 }
             }
 
